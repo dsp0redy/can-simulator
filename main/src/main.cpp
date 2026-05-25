@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
     canSend->createFrameAndSend(id, dlc, arr);
     std::this_thread::sleep_for(std::chrono::seconds(2));
 
-    canReceive->stopReceiveThread();
+    // canReceive->stopReceiveThread();
     
     return 0;
 }
