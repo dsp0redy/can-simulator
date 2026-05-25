@@ -1,5 +1,6 @@
 #include "can-receive.hpp"
 #include <cerrno>
+#include <chrono>
 #include <iostream>
 
 CanReceive::~CanReceive()
@@ -21,7 +22,12 @@ void CanReceive::receiveCanData()
                 std::this_thread::sleep_for(std::chrono::milliseconds(10));
                 continue;
             }
-            std::cout << "can raw socket read" << std::endl;
+            if (errno == EINTR)
+            {
+                continue;
+            }
+            std::cerr << "Error reading from CAN raw socket (errno=" << errno << ")" << std::endl;
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
             continue;
         }
 

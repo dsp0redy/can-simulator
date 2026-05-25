@@ -24,11 +24,11 @@ bool CanSetup::setUp()
         return false;
     }
 
-    m_addrress.can_family = AF_CAN;
-    m_addrress.can_ifindex = m_interface.ifr_ifindex;
+    m_address.can_family = AF_CAN;
+    m_address.can_ifindex = m_interface.ifr_ifindex;
 
     // Bind the socket to the interface
-    if(bind(m_socketId, (struct sockaddr *)&m_addrress, sizeof(m_addrress)) < 0){
+    if(bind(m_socketId, (struct sockaddr *)&m_address, sizeof(m_address)) < 0){
         std::cerr << "Error in binding socket" << std::endl;
         close(m_socketId);
         m_socketId = -1;

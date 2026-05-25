@@ -12,7 +12,6 @@
 #include <linux/can.h>
 #include <linux/can/raw.h>
 
-
 class CanSetup
 {
 public:
@@ -30,8 +29,8 @@ public:
 
 private:
     int m_socketId = -1;
-    struct sockaddr_can m_addrress;
-    struct ifreq m_interface;
+    struct sockaddr_can m_address{};
+    struct ifreq m_interface{};
 };
 
 #endif // CAN_SETUP_HPP
