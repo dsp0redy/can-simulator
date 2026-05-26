@@ -1,11 +1,13 @@
 #include <iostream>
 #include <thread>
 #include <chrono>
+#include <random>
+#include <vector>
 #include "can-setup.hpp"
 #include "can-receive.hpp"
 #include "can-send.hpp"
 
-int main(int argc, char *argv[])
+int main()
 {
     std::cout << "CAN Simulator" << std::endl;
 
@@ -21,28 +23,29 @@ int main(int argc, char *argv[])
     canReceive->startReceiveThread();
 
     auto canSend = std::make_shared<CanSend>(canSetup);
-    // frame_to_send.can_id = 0x5A1; // CAN ID (Hex)
-    // frame_to_send.can_dlc = 4;    // Data length (4 bytes)
-    // frame_to_send.data[0] = 0xAA;
-    // frame_to_send.data[1] = 0xBB;
-    // frame_to_send.data[2] = 0xCC;
-    // frame_to_send.data[3] = 0xDD;
-    std::vector<uint8_t> arr = {0XAA, 0XBB, 0XCC, 0XDD};
-    uint32_t id = 0X5A1;
-    uint8_t dlc = 4;
-    canSend->createFrameAndSend(id, dlc, arr);
-    std::this_thread::sleep_for(std::chrono::seconds(2));
 
-    canSend->createFrameAndSend(id, dlc, arr);
-    std::this_thread::sleep_for(std::chrono::seconds(2));
+    // Sample PGNs to exercise the J1939 path before DBC integration.
+    std::vector<uint32_t> pgnList = {0x00F004, 0x00FEEE, 0x00FEF2};
+    std::mt19937 rng(std::random_device{}());
+    std::uniform_int_distribution<int> byteDist(0, 255);
 
-    canSend->createFrameAndSend(id, dlc, arr);
-    std::this_thread::sleep_for(std::chrono::seconds(2));
+    for (uint32_t pgn : pgnList)
+    {
+        std::vector<uint8_t> payload(8);
+        for (uint8_t &b : payload)
+        {
+            b = static_cast<uint8_t>(byteDist(rng));
+        }
 
-    canSend->createFrameAndSend(id, dlc, arr);
-    std::this_thread::sleep_for(std::chrono::seconds(2));
+        if (!canSend->sendPgnData(pgn, payload))
+        {
+            std::cerr << "Failed to send PGN 0x" << std::hex << pgn << std::dec << std::endl;
+        }
 
-    // canReceive->stopReceiveThread();
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    }
+
+    canReceive->stopReceiveThread();
     
     return 0;
 }

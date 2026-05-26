@@ -30,7 +30,7 @@ public:
 private:
     int m_socketId = -1;
     struct sockaddr_can m_address{};
-    struct ifreq m_interface{};
+    // struct ifreq m_interface{};
 };
 
 #endif // CAN_SETUP_HPP

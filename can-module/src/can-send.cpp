@@ -1,53 +1,87 @@
 #include "can-send.hpp"
-#include <cstring>
+#include "timestamp-utils.hpp"
+#include <cerrno>
 #include <iostream>
+#include <net/if.h>
 
-bool CanSend::sendCanData(const struct can_frame *canFrame)
+bool CanSend::sendPgnData(uint32_t pgn, const std::vector<uint8_t> &payload,
+                          uint8_t destinationAddr, uint64_t destinationName)
 {
-    int socketId = m_canSetup->getSocketID();
+    constexpr uint32_t kJ1939PgnMask = 0x3FFFFU;
 
-    int bytes = write(socketId, canFrame, sizeof(struct can_frame));
-    if (sizeof(struct can_frame) == bytes)
-        std::cout << "Sent CAN Frame! ID: 0x" << std::hex << canFrame->can_id << " Data Length: " << (int)canFrame->can_dlc << std::endl;
+    int socketId = m_canSetup->getSocketID();
+    if (socketId < 0)
+    {
+        std::cerr << "Invalid socket" << std::endl;
+        return false;
+    }
+    if ((pgn & ~kJ1939PgnMask) != 0)
+    {
+        std::cerr << "Invalid PGN (must be 18-bit): 0x" << std::hex << pgn << std::dec << std::endl;
+        return false;
+    }
+    if (payload.empty())
+    {
+        std::cerr << "Payload cannot be empty" << std::endl;
+        return false;
+    }
+
+    struct sockaddr_can destination{};
+    destination.can_family = AF_CAN;
+    destination.can_ifindex = if_nametoindex("vcan0");
+    if (destination.can_ifindex == 0)
+    {
+        std::cerr << "Error finding CAN interface vcan0" << std::endl;
+        return false;
+    }
+    destination.can_addr.j1939.addr = destinationAddr;
+    destination.can_addr.j1939.pgn = pgn;
+    destination.can_addr.j1939.name = destinationName;
+
+    struct iovec iov{};
+    iov.iov_base = const_cast<uint8_t *>(payload.data());
+    iov.iov_len = payload.size();
+
+    struct msghdr msg{};
+    msg.msg_name = &destination;
+    msg.msg_namelen = sizeof(destination);
+    msg.msg_iov = &iov;
+    msg.msg_iovlen = 1;
+
+    ssize_t bytes = sendmsg(socketId, &msg, 0);
+    if (bytes == static_cast<ssize_t>(payload.size()))
+    {
+        std::cout << "Sent J1939 PGN 0x" << std::hex << pgn << std::dec
+                  << " Payload Length: " << payload.size() << std::endl;
+    }
     else
     {
-        std::cerr << "Error writing to socket" << std::endl;
+        std::cerr << "Error writing to socket (errno=" << errno << ")" << std::endl;
         return false;
     }
-    return true;
-}
 
-bool CanSend::createFrameAndSend(const uint32_t canId, const uint8_t dlc, const std::vector<uint8_t> &canData)
-{
-    // Linux CAN frame layout reference:
-    // struct can_frame {
-    //     canid_t can_id;
-    //     union {
-    //         __u8 len;
-    //         __u8 can_dlc; // deprecated
-    //     };
-    //     __u8 __pad;
-    //     __u8 __res0;
-    //     __u8 len8_dlc;
-    //     __u8 data[8] __attribute__((aligned(8)));
-    // };
+    // TX timestamping events are delivered through the socket error queue.
+    char errData[256]{};
+    char control[512]{};
+    struct iovec errIov{};
+    errIov.iov_base = errData;
+    errIov.iov_len = sizeof(errData);
 
-    struct can_frame canFrame;
-    std::memset(&canFrame, 0, sizeof(struct can_frame));
-    if (dlc != canData.size() || dlc > 8)
+    struct msghdr errMsg{};
+    errMsg.msg_iov = &errIov;
+    errMsg.msg_iovlen = 1;
+    errMsg.msg_control = control;
+    errMsg.msg_controllen = sizeof(control);
+
+    ssize_t errBytes = recvmsg(socketId, &errMsg, MSG_ERRQUEUE | MSG_DONTWAIT);
+    if (errBytes >= 0)
     {
-        std::cerr << "Error in data length" << std::endl;
-        return false;
+        printTimestampFromMsg(std::cout, errMsg, "TX timestamp: ", "\n");
     }
-    canFrame.can_id = canId;
-    canFrame.can_dlc = dlc;
-    for (size_t it = 0; it < static_cast<size_t>(dlc); it++)
+    else if (errno != EAGAIN && errno != EWOULDBLOCK)
     {
-        canFrame.data[it] = canData[it];
+        std::cerr << "Error reading TX timestamp from error queue (errno=" << errno << ")" << std::endl;
     }
-
-    if (!sendCanData(&canFrame))
-        return false;
 
     return true;
 }

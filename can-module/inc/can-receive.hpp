@@ -19,7 +19,6 @@ public:
 
 private:
     std::shared_ptr<CanSetup> m_canSetup;
-    struct can_frame m_canFrame;
     std::atomic<bool> m_shouldRun{false};
     std::thread m_receiveThread;
 };

@@ -2,6 +2,7 @@
 #define CAN_SEND_HPP
 
 #include "can-setup.hpp"
+#include <linux/can/j1939.h>
 #include <memory>
 #include <vector>
 
@@ -12,8 +13,10 @@ public:
     CanSend(std::shared_ptr<CanSetup> canSetup) : m_canSetup(canSetup) {}
     ~CanSend() = default;
 
-    bool sendCanData(const struct can_frame *canFrame);
-    bool createFrameAndSend(const uint32_t canId, const uint8_t dlc, const std::vector<uint8_t> &canData);
+    bool sendPgnData(uint32_t pgn, const std::vector<uint8_t> &payload,
+                     uint8_t destinationAddr = J1939_NO_ADDR,
+                     uint64_t destinationName = J1939_NO_NAME);
+
 private:
     std::shared_ptr<CanSetup> m_canSetup;
 };
