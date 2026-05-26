@@ -34,7 +34,8 @@ bool CanSend::sendPgnData(uint32_t pgn, const std::vector<uint8_t> &payload,
 
     struct sockaddr_can destination{};
     destination.can_family = AF_CAN;
-    destination.can_ifindex = if_nametoindex("vcan0");
+    static const int vcan0IfIndex = static_cast<int>(if_nametoindex("vcan0"));
+    destination.can_ifindex = vcan0IfIndex;
     if (destination.can_ifindex == 0)
     {
         std::cerr << "Error finding CAN interface vcan0" << std::endl;
