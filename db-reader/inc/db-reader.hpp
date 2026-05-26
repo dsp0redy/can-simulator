@@ -6,7 +6,7 @@
 class DbReader{
 public:
     DbReader()=default;
-    DbReader(std::string &dbPath) : m_dbPath(dbPath) {}
+    explicit DbReader(const std::string &dbPath) : m_dbPath(dbPath) {}
     ~DbReader()=default;
 private:
     std::string m_dbPath{};

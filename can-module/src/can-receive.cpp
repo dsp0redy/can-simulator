@@ -1,5 +1,6 @@
 #include "can-receive.hpp"
 #include "timestamp-utils.hpp"
+#include <algorithm>
 #include <cerrno>
 #include <chrono>
 #include <iostream>
@@ -81,7 +82,8 @@ void CanReceive::receiveCanData()
                   << source.can_addr.j1939.pgn
                   << " SRC: 0x" << static_cast<int>(source.can_addr.j1939.addr)
                   << " Data: ";
-        for (ssize_t i = 0; i < bytes; i++)
+        ssize_t payloadBytesToPrint = std::min(bytes, static_cast<ssize_t>(iov.iov_len));
+        for (ssize_t i = 0; i < payloadBytesToPrint; i++)
         {
             std::cout << std::hex << static_cast<int>(payload[i]) << " ";
         }

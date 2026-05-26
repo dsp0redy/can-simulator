@@ -30,7 +30,7 @@ bool CanSetup::setUp()
     constexpr uint8_t kLocalSourceAddress = 0x80;
 
     // reference https://docs.kernel.org/networking/j1939.html
-    // Create a SocketCAN raw socket
+    // Create a J1939 SocketCAN datagram socket
     m_socketId = socket(PF_CAN, SOCK_DGRAM, CAN_J1939);
     if (m_socketId < 0)
     {

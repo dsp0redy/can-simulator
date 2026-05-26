@@ -1,4 +1,6 @@
+#include <cstdint>
 #include <iostream>
+#include <memory>
 #include <thread>
 #include <chrono>
 #include <random>
