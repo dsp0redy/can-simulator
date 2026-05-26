@@ -9,6 +9,12 @@ bool CanSend::sendPgnData(uint32_t pgn, const std::vector<uint8_t> &payload,
 {
     constexpr uint32_t kJ1939PgnMask = 0x3FFFFU;
 
+    if (!m_canSetup)
+    {
+        std::cerr << "CAN setup is not initialized" << std::endl;
+        return false;
+    }
+
     int socketId = m_canSetup->getSocketID();
     if (socketId < 0)
     {
