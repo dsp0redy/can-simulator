@@ -1,5 +1,6 @@
 #include "can-send.hpp"
 #include "timestamp-utils.hpp"
+#include <atomic>
 #include <cerrno>
 #include <iostream>
 #include <net/if.h>
@@ -34,8 +35,17 @@ bool CanSend::sendPgnData(uint32_t pgn, const std::vector<uint8_t> &payload,
 
     struct sockaddr_can destination{};
     destination.can_family = AF_CAN;
-    static const int vcan0IfIndex = static_cast<int>(if_nametoindex("vcan0"));
-    destination.can_ifindex = vcan0IfIndex;
+    static std::atomic<unsigned int> vcan0IfIndex{0};
+    unsigned int resolvedIfIndex = vcan0IfIndex.load(std::memory_order_relaxed);
+    if (resolvedIfIndex == 0)
+    {
+        resolvedIfIndex = if_nametoindex("vcan0");
+        if (resolvedIfIndex != 0)
+        {
+            vcan0IfIndex.store(resolvedIfIndex, std::memory_order_relaxed);
+        }
+    }
+    destination.can_ifindex = static_cast<int>(resolvedIfIndex);
     if (destination.can_ifindex == 0)
     {
         std::cerr << "Error finding CAN interface vcan0" << std::endl;
