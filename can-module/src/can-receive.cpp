@@ -12,6 +12,12 @@ CanReceive::~CanReceive()
 
 void CanReceive::receiveCanData()
 {
+    if (!m_canSetup)
+    {
+        std::cerr << "CAN setup is not initialized" << std::endl;
+        return;
+    }
+
     int socketId = m_canSetup->getSocketID();
     if (socketId < 0)
     {
