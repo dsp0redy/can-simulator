@@ -1,0 +1,46 @@
+name: ARM32 Build
+
+on:
+#   push:
+#     branches:
+#       - main
+#       - master
+    pull_request:
+    workflow_dispatch:
+
+permissions:
+  contents: read
+
+
+jobs:
+  build-arm32:
+    name: Build (ARM32 cross)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install ARM32 toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
+
+      - name: Configure
+        run: |
+          cmake -S . -B build-arm32 \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_SYSTEM_NAME=Linux \
+            -DCMAKE_SYSTEM_PROCESSOR=arm \
+            -DCMAKE_C_COMPILER=arm-linux-gnueabihf-gcc \
+            -DCMAKE_CXX_COMPILER=arm-linux-gnueabihf-g++
+
+      - name: Build
+        run: cmake --build build-arm32 --config Release -j
+
+      - name: Upload ARM32 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: can-simulator-arm32
+          path: build-arm32/bin/Can-Simulator
+          if-no-files-found: error

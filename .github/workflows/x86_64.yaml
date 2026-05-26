@@ -1,0 +1,35 @@
+name: x86_64 Build
+
+on:
+#   push:
+#     branches:
+#       - main
+#       - master
+    pull_request:
+
+    workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-x86_64:
+    name: Build (x86_64)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --config Release -j
+
+      - name: Upload x86_64 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: can-simulator-x86_64
+          path: build/bin/Can-Simulator
+          if-no-files-found: error
