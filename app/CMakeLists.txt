@@ -11,8 +11,14 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 # Include sub directories
+<<<<<<< HEAD:app/CMakeLists.txt
 add_subdirectory(db-reader)
 add_subdirectory(can-module)
 add_subdirectory(process-data)
+=======
+add_subdirectory(can-setup)
+add_subdirectory(can-module)
+add_subdirectory(db-reader)
+>>>>>>> a6238003c7cd0cd38eaa86f282947aeef3878ad0:CMakeLists.txt
 add_subdirectory(main)
 

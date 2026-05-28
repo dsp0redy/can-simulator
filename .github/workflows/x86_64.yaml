@@ -5,9 +5,12 @@ on:
 #     branches:
 #       - main
 #       - master
-#   pull_request:
+    pull_request:
 
     workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   build-x86_64:
